@@ -1,0 +1,6 @@
+obj-$(CONFIG_AW9110_I2C)  += aw9110_1.o
+obj-$(CONFIG_AW9110_I2C)  += aw9110_2.o
+obj-$(CONFIG_AW9110_I2C)  += aw2013.o
+obj-$(CONFIG_AW9110_I2C_EXT_GPIO)  += aw9110_ext_probe.o
+obj-$(CONFIG_AW9110_I2C_EXT_GPIO)  += aw9110_1-i2c.o
+obj-$(CONFIG_AW9110_I2C_EXT_GPIO)  += aw9110_2-i2c.o

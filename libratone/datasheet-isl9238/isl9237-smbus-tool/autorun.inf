@@ -1,0 +1,26 @@
+[AutoRun]
+open=AutoRun.exe 
+icon=icon.ico
+
+
+[CUSTOM CD MENU]
+titletext=Intersil ISL9237 SMBus Tool Installation Menu
+buttonqty= 3
+buttoncolor=clAqua
+menucolor= clSilver
+
+[BUTTON1]
+buttontext=Install ISL9237 SMBus Tool
+relativepathandfilename=Software\setup.exe
+closemenuonclick=0
+
+[BUTTON2]
+buttontext=Read Software Insallation Guide 
+relativepathandfilename=Document\ISL9237 Software Installation Guide.pdf
+closemenuonclick=0
+
+[BUTTON3]
+buttontext=Open the readme file
+relativepathandfilename="ISL9237 readme.rtf"
+closemenuonclick=0
+

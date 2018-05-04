@@ -1,0 +1,7 @@
+/output/
+
+Platform_ARM/*
+doxygen/*
+assets/*
+*.lbr
+

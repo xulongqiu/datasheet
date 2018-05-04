@@ -1,0 +1,6 @@
+config AW9120_I2C
+    bool "AW9120_I2C support"
+    depends on I2C 
+    default y
+    help
+      If you say yes here you get support for AW9110 I2C support

@@ -1,0 +1,266 @@
+﻿Change Log as of 29 September 2016
+
+Release_v3.3.3
+Changes:
+-Added vendor_info.h for changing all driver settings in one file. See integration guide.
+-Updated Illegal Type-C device detection and handling
+-Reworked timer to allow for more system agnostic implementation
+-Added support for additional FUSB302 series products, ex. FUSB302T/P
+-Fixed bug relating to collisions
+-Fixed bug where first PD message may be received incorrectly
+-Improved Audio Accessory state logic
+-Improved Sink Current detection
+-Linux Platform:
+	-Removed 1ms interrupt and replaced with function that returns system time in ms
+	-Updated debug messaging to Type-C 1.2
+-Platform_ARM:
+        - updated to STM32Cube_FW_F0_V1.6.0 to resolve I2C nak issue seen during testing
+
+How to upgrade from 3.3.2 to 3.3.3
+-All Platforms:
+	-Add platform definition for function 'void platform_notify_bist(FSC_BOOL bistEnabled)'
+	-Add platform definition for function 'void platform_set_timer(TIMER *timer, FSC_U16 timeout)'
+	-Add platform definition for function 'FSC_BOOL platform_check_timer(TIMER *timer)'
+	-Add platform definition for function 'FSC_U16 platform_get_system_time(void)'
+	-Add definition for 'FSC_U16 get_system_time(void)'. See integration guide.
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+Release_v3.3.2
+Changes:
+-Updated to Type-C v1.2
+-Large code size reduction
+-Reduced number of I2C transactions
+-Added ability to automatically enter an alternate mode
+-Added platform callback to indicate Data Role Swap
+-Now able to compile with only Sink + Accessory build options
+-Auto VDM discovery will abort if there is a NAK or No Response to Discover Identity
+-Linux platform:
+	-Now uses falling edge interrupt instead of level low
+	-Added wakelock to example driver
+
+How to upgrade from 3.3.1 to 3.3.2
+-All Platforms:
+	-Add platform definition for function 'void platform_set_data_role(FSC_BOOL PolicyIsDFP)'
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+Release_v3.3.1
+Changes:
+-Added automated illegal 10k dangling cable detection and correction
+-Dramatically reduced interrupt load
+-Added ARM7 Platform support
+-Added ECN updates
+-Reduced power consumption when PD is enabled
+-Added Platform callback to indicate CC orientation
+-Added Platform callback to indicate advertised current (source or sink)
+-Added core function for enabling PD after coming from dead battery
+-System timer now defaults to 1ms
+-Reduced Sink connect to no PD from 15s to 3.6s
+-Fixed bug with MDAC values being off by one
+-Fixed bug where INT_N could get stuck low
+-Fixed bug on PIC where VBUS could start high
+
+How to upgrade from 3.3.0 to 3.3.1
+-All Platforms:
+	-Update system timer to tick at 1ms instead of 100us
+	-Update function name from core_tick_at_100us to core_tick
+	-Add platform definition for function 'void platform_notify_cc_orientation(CC_ORIENTATION orientation)'
+	-Add platform definition for function 'void platform_notify_pd_contract(FSC_BOOL contract)'
+    	-Add platform definition for function 'void platform_notify_unsupported_accessory(void)'
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+Release_v3.3.0
+Changes:
+-PD is officialy PD compliant
+-Updated Integration document.
+-Updated platform README.txt documents.
+-Core is now configurable at compile time. See the integration guide and each platform's README.txt for more details.
+-Added VBus discharge
+-Updated VBus handling to ease customization
+-Various bug fixes and optimizations
+
+How to upgrade from 3.2.0 to 3.3.0
+-This assumes that the 3.2.0 core code will be replaced completely with the new 3.3.0 core. Follow these instructions
+ to update the platform code to interface with the updated core. Noted files are in the respective platform directory
+ unless stated otherwise. Please refer to the integration guide for more details.
+	-All platforms:
+		-GenericTypeDefs.h -> FSCTypes.h (replace for ARM and Linux platforms - PIC keeps GenericTypeDefs.h)
+			-Update custom types throughout your platform code as shown below. If a 3.2 type is not listed, then
+			 is either unused or unchanged.
+				BOOL	-> FSC_BOOL
+				UINT8	-> FSC_U8
+				UINT16	-> FSC_U16
+				UINT32	-> FSC_U32
+				INT8	-> FSC_S8
+				INT16	-> FSC_S16
+				INT32	-> FSC_S32
+		-platform.c or HWIO.c - update functions according to core/platform.h (see function comments and integration guide for details)
+			-Replace the VBus getters and setters with the following:
+				void platform_set_vbus_lvl_enable(VBUS_LVL level, FSC_BOOL blnEnable, FSC_BOOL blnDisableOthers)
+				FSC_BOOL platform_get_vbus_lvl_enable(VBUS_LVL level)
+			-Add the following function - may be an empty stub if the VBus discharge path is not applicable for your platform:
+				void platform_set_vbus_discharge(FSC_BOOL blnEnable)
+	-Linux platform:
+		-fusb30x_driver.c
+			-Wrap '#include "../core/core.h"' inside of '#ifdef FSC_DEBUG [...] #endif'
+			-Wrap call to 'fusb_Sysfs_Init()' and associated output (in the driver's probe function) inside of '#ifdef FSC_DEBUG [...] #endif'
+			-The remaining differences are changing 'printk' statements to 'pr_<level>' (for example, pr_debug, pr_err, etc) and are optional, but recommended
+		-fusb30x_global.h - merge in all changes, which include
+			-Type changes
+			-Preprocessor debug fencing
+			-struct fusb30x_chip changes
+		-hostcomm.c/h - merge in all changes, which include
+			-Type changes
+			-Preprocessor functionality fencing
+		-platform_helpers.c/h
+			-Type changes
+			-Preprocessor debug and functionality fencing (critical for build)
+			-Upgraded robustness of GPIO/IRQ initialization
+			-Upgraded I2C error code parsing/handling
+			-Added basic I2C read/write retries (default 3)
+			-Updated printk statements to pr_<level>
+			-Added PD header message type parsing to sysfs interface
+			-Added new sysfs file to easily access Type-C statelog (typec_state_log)
+			-Added new sysfs file to easily access PD statelog (pd_state_log)
+			-Added new sysfs file to easily reinitialize the FUSB302 (reinitialize)
+			-Upgraded sysfs initialization - files now grouped under "control" directory
+			-Driver initialization update
+		-Makefile:
+			-Add new preprocessor flags and files as described in Platform_Linux/README.txt
+	-ARM platform:
+		-Project Settings
+			-Add new preprocessor flags as described in Platform_ARM/README.txt
+		-main.c, hostcomm.c/h, stm32f0xx_it.c, usbd_hid.c
+			-Preprocessor debug fencing
+	-PIC platform:
+		-Project Settings
+			-Add new preprocessor flags as described in Platform_PIC/README.txt
+		-main.c/h, hostcomm.c/h
+			-Preprocessor debug fencing
+
+----------------------------------------------------------------------------------------------------------------------
+
+Release_v3.2.0
+Changes:
+-Revisioning revised!
+	-Requires GUI update to display new revision numbers
+	-HID_I2C-USB Spec deprecated
+-Code supports Interrupt Triggered mode for low power!
+-Timers modified to allow for greater tolerance!
+-PD!
+    -Sink Rejects PR_SWAP when partner is not dual role capable
+    -Default PDOs advertise 0.5 A to avoid high current draw from USB power
+    -Added SRC_Wait_New_Capabilities state to PD
+    -Hard Reset sequence is now more robust
+    -Removed a blocking wait
+    -Fixed problem with VCONN swap
+-Type-C!
+    -VBUS detach threshold increased
+    -When detaching from Attached.Source state, waits for VBUS to discharge before applying pulldowns
+    -State machine optimisations
+    -Alternate Modes!
+    -Manual Retries fully implemented
+    -Alternate Unattached Source detects all possible CC terminations
+    -Improved Alternate Unattached Logic
+-PIC!
+    -Interrupt Triggered mode supported
+-ARM!
+    -Add build support for Keil uVision5 IDE
+    -Interrupt Triggered mode supported
+-Linux!
+    -Interrupt Triggered mode supported
+    -Clock idling supported
+    -Verbose PD State Log output from sysfs HostComm interface
+KNOWN ISSUES:
+-Manual Retries can stall if there is a collision
+-ARM build using Keil uVision5 produces many harmless warnings.  Will address these in a future release.
+
+----------------------------------------------------------------------------------------------------------------------
+
+
+Release_v3.1
+Firmware version ‘F’ ‘1’
+Works with GUI Rev 3.0
+Changes
+- Added Linux platform!
+- ARM Platform Updates!
+- PD Compliance Updates!
+- Bug fixes!
+KNOWN ISSUES:
+
+----------------------------------------------------------------------------------------------------------------------
+
+Release_v3.0
+Firmware version ‘F’ ‘0’
+Works with GUI Rev 3.0
+Changes:
+- Refactored into platform-specific vs. core TypeC/PD code!
+- Added PIC platform!
+- Added ARM platform!
+- DisplayPort features!
+- BIST Support!
+- Compliance updates!
+- CC Debouncing Updates!
+- Type-C Optimization!
+- Policy Engine State Logging!
+KNOWN ISSUES:
+- Source Side Hard Reset will crash firmware if VBUS discharge is too fast
+
+----------------------------------------------------------------------------------------------------------------------
+
+Release_v2.2
+Firmware version ‘E’ ‘2’
+Works with GUI Rev 2.0+
+Changes:
+- New TypeC States: Try.Snk & AttachWait.Src!
+- New Type C State: Unattached.Src!
+- State Logging!
+- Source Current Now Settable!
+- PD: Hard Resets No Longer Cause Unattach!
+- Debounce Update!
+- CC Termination Voltage Detection Now Follows Spec!
+- General State Transition Improvements!
+KNOWN ISSUES:
+- VSafe0V Check on FPGA build
+- Sinks on PR Swap
+- Changing port type does not change the toggling on CC pins
+
+----------------------------------------------------------------------------------------------------------------------
+
+Release_v2.1
+Firmware version ‘E’ ‘1’
+Works with GUI Rev 2.0
+Changes:
+- Type-C Fixes from v2.0
+- VSafe0V checks before Attached.SRC
+- Changed build configurations:
+  Was: FM141014B
+  Is now: FM141014_SME, FM141014_SMD (state machine enable/disable)
+
+----------------------------------------------------------------------------------------------------------------------
+
+Release_v2.0
+Firmware version ‘E’ ‘0’
+Works with GUI Rev 2.0
+KNOWN ISSUES:
+- Source Preference code is broken, Type-C features unsafe.
+
+----------------------------------------------------------------------------------------------------------------------
+
+Release_FSC_Demo_v1.1
+Firmware version ‘D’ ‘5’
+
+----------------------------------------------------------------------------------------------------------------------
+
+FUSB300_Reference_Code_-_Version_1.0
+- Initial_AUTO_CRC_Version
+- IOP_Reference_Code_-_Version_1.0
+- Release_Convert_to_toggle
+- Sutton_Version_1p5
+- Type_C_v1p00
+- Type-C_Rev_1.1_Support
