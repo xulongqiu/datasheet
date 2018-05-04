@@ -1,0 +1,27 @@
+1. 关于OTA的Touch固件升级
+最新的OTA更新内容如下:
+* bootable:
+集成来自Eric的touch update
+添加touchupdate()到updater
+* build:
+更新updater-script的生成过程
+集成touch_update到recovery系统/sbin/下
+* device:
+根据system.prop的固件版本定义, 拷贝相关的固件文件到/system/lib/
+在system.prop中新增固件版本号的获取
+修正quick_kernel_build.sh, 使得其可以在coco项目中使用
+* 注意事项:
+1) 请确保固件已经提前放置于工程目录当中(例如: device/amlogic/coco/)
+2) 请确保固件命名规则: touch_firmware_v<%d>.bin
+3) 请确保system.prop中的配置"ro.product.firmware.revision"存在, 并且数值等于2)要求的文件命中的<%d>
+4) 请确保修改完成后再使用make -j8 otapackage生成一次更新包
+
+2. 关于WEB OTA脚本
+附件的web_ota_auto_test.sh时一个使用完全不同于ADB的更新机制:
+* 使用前必须知道设备的IP地址
+* 该脚本依赖curl命令
+* 确保设备版本在v18以上(否则升级会很缓慢)
+* 该脚本与WEB点击升级所进行的操作完全相同(不必再点击: "固件升级" -> "自定义升级" -> "选择文件" -> "升级" -> "升级"等相关的步骤)
+* 使用方法:
+        web_ota_auto_test.sh <OTA包的本地路径> <需要进行WEB方式OTA的设备的IP地址>
+* 升级完成后的检测可能仍然存在一些问题, 但不影响升级的进行;
